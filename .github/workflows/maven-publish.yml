@@ -1,0 +1,46 @@
+name: maven-publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: publish-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Necessario sia per Maven che per Docker
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check version is not SNAPSHOT
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Project version: $VERSION"
+          if [[ "$VERSION" == *SNAPSHOT* ]]; then
+            echo " version SNAPSHOT non consentita per deploy "
+            exit 1
+          fi
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+          settings-path: ${{ github.workspace }}
+
+      - name: Debug settings.xml
+        run: cat ${{ github.workspace }}/settings.xml
+
+      - name: Build & Deploy Maven artifact
+        run: mvn deploy -DskipTests --settings ${{ github.workspace }}/settings.xml
