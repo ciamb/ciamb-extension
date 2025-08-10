@@ -1,13 +1,15 @@
-package com.ciamb.reactive.bool;
+package com.ciamb.fluent.bool;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-public final class ReactiveBool {
+import static java.lang.Boolean.FALSE;
+
+public final class FluentBoolean {
     private final BooleanSupplier supplier;
 
-    private ReactiveBool(BooleanSupplier supplier) {
+    private FluentBoolean(BooleanSupplier supplier) {
         this.supplier = memoize(supplier);
     }
 
@@ -31,60 +33,62 @@ public final class ReactiveBool {
     }
 
     // eager
-    public static ReactiveBool when(boolean condition) {
-        return new ReactiveBool(() -> condition);
+    public static FluentBoolean when(boolean condition) {
+        return new FluentBoolean(() -> condition);
     }
 
     // lazy
-    public static ReactiveBool when(BooleanSupplier supplier) {
-        return new ReactiveBool(supplier);
+    public static FluentBoolean when(BooleanSupplier supplier) {
+        return new FluentBoolean(supplier);
     }
 
     // bridge Optional
-    public static ReactiveBool when(Optional<?> o) {
+    public static FluentBoolean when(Optional<?> o) {
         return when(o.isPresent());
     }
 
     // operatori logici
     // and
-    public ReactiveBool and(boolean other) {
-        return new ReactiveBool(() -> supplier.getAsBoolean() && other);
+    public FluentBoolean and(boolean other) {
+        return new FluentBoolean(() -> supplier.getAsBoolean() && other);
     }
-    public ReactiveBool and(BooleanSupplier other) {
-        return new ReactiveBool(() ->  supplier.getAsBoolean() && other.getAsBoolean());
+    public FluentBoolean and(BooleanSupplier other) {
+        return new FluentBoolean(() ->  supplier.getAsBoolean() && other.getAsBoolean());
     }
 
     // or
-    public ReactiveBool or(boolean other) {
-        return new ReactiveBool(() -> supplier.getAsBoolean() || other);
+    public FluentBoolean or(boolean other) {
+        return new FluentBoolean(() -> supplier.getAsBoolean() || other);
     }
-    public ReactiveBool or(BooleanSupplier other) {
-        return new ReactiveBool(() ->  supplier.getAsBoolean() || other.getAsBoolean());
+    public FluentBoolean or(BooleanSupplier other) {
+        return new FluentBoolean(() ->  supplier.getAsBoolean() || other.getAsBoolean());
     }
 
     // not
-    public ReactiveBool not() {
-        return new ReactiveBool(() -> !supplier.getAsBoolean());
+    public FluentBoolean not() {
+        return new FluentBoolean(() -> !supplier.getAsBoolean());
     }
 
     // short-circuit
-    public ReactiveBool isTrue() {
+    public FluentBoolean isTrue() {
         return this;
     }
-    public ReactiveBool isFalse() {
+    public FluentBoolean isFalse() {
         return not();
     }
 
     // runnable
-    public void thenRun(Runnable action) {
+    public FluentBoolean thenRun(Runnable action) {
         if (supplier.getAsBoolean()) action.run();
+        return this;
     }
-    public void elseRun(Runnable action) {
+    public FluentBoolean elseRun(Runnable action) {
         if (!supplier.getAsBoolean()) action.run();
+        return this;
     }
 
     // ritorna Optional
-    public <T> Optional<T> thenGet(Supplier<? extends T> ifTrue) {
+    public <T> Optional<T> ifTrueSupply(Supplier<? extends T> ifTrue) {
         if (supplier.getAsBoolean())
             return Optional.ofNullable(ifTrue.get());
         else
@@ -92,7 +96,7 @@ public final class ReactiveBool {
     }
 
     // ternario
-    public <T> Optional<T> choose(Supplier<? extends T> ifTrue, Supplier<? extends T> ifFalse) {
+    public <T> Optional<T> chooseAndSupply(Supplier<? extends T> ifTrue, Supplier<? extends T> ifFalse) {
         if (supplier.getAsBoolean())
             return Optional.ofNullable(ifTrue.get());
         else
